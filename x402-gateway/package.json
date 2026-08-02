@@ -1,0 +1,15 @@
+{
+  "name": "myzubster-robot-x402-gateway",
+  "version": "0.1.0",
+  "description": "x402 and escrow gateway for MyZubster Robot",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
