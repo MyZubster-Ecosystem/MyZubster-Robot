@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MyZubster Robot Genealogy Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #1a1a2e; background: #f4f5f7; }
+    .dashboard { max-width: 960px; margin: 0 auto; padding: 24px; }
+    .dashboard__title { font-size: 1.6rem; margin: 0 0 16px; }
+    .filters { background: #fff; border: 1px solid #e2e4e8; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+    .filters__title { display: none; }
+    .filters__field { font-size: 0.9rem; color: #555; }
+    .filters__field input, .filters__field select { margin-left: 6px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+    .metrics-panel { background: #fff; border: 1px solid #e2e4e8; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
+    .metrics-panel__title { display: none; }
+    .metrics-panel dl { display: flex; gap: 24px; margin: 0; }
+    .metrics-panel dt { font-size: 0.75rem; color: #888; text-transform: uppercase; }
+    .metrics-panel dd { margin: 2px 0 0; font-size: 1.1rem; font-weight: 600; }
+    .genealogy-tree { background: #fff; border: 1px solid #e2e4e8; border-radius: 6px; padding: 16px; }
+    .genealogy-tree__title { font-size: 1.2rem; margin: 0 0 12px; }
+    .genealogy-tree ul { list-style: none; padding-left: 20px; margin: 0; border-left: 2px solid #d0d7de; }
+    .genealogy-tree__roots { padding-left: 0; border-left: none; }
+    .robot-node { border: 1px solid #e2e4e8; border-radius: 6px; padding: 8px 12px; margin: 6px 0; display: inline-block; }
+    .robot-node__header { display: flex; align-items: center; gap: 8px; }
+    .robot-node__id { font-size: 1rem; margin: 0; }
+    .robot-node__profile-link { font-size: 0.75rem; padding: 2px 8px; border: 1px solid #0969da; border-radius: 4px; background: #fff; color: #0969da; cursor: pointer; }
+    .robot-node__meta { display: grid; grid-template-columns: auto auto; gap: 2px 12px; font-size: 0.85rem; margin: 8px 0 0; }
+    .robot-node__meta dt { color: #888; }
+    .robot-node__meta dd { margin: 0; font-weight: 500; }
+    .robot-node__skills { font-size: 0.85rem; color: #555; margin: 6px 0 0; }
+    .dashboard__selected { background: #ddf4ff; border: 1px solid #0969da; border-radius: 6px; padding: 8px 16px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="../src/data/sample-lineage.js"></script>
+  <script src="../src/api/genealogy.js"></script>
+  <script src="../src/ui/RobotNode.js"></script>
+  <script src="../src/ui/GenealogyTree.js"></script>
+  <script src="../src/ui/Metrics.js"></script>
+  <script src="../src/ui/Filters.js"></script>
+  <script src="../src/ui/Dashboard.js"></script>
+  <!-- This static demo shell is intentionally minimal. The kit's production
+       entry point is the React <Dashboard> component (see scripts/genealogy-check.js
+       for the server-side render, and src/ui/Dashboard.js for the component API).
+       No network interception, no wallet wiring. -->
+</body>
+</html>

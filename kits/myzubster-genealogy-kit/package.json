@@ -1,0 +1,23 @@
+{
+  "name": "myzubster-genealogy-kit",
+  "version": "0.1.0",
+  "description": "React dashboard kit that visualizes the MyZubster robot genealogy tree (mother -> children -> grandchildren). Consumes the #79 Robot DNA kit genealogyTree() output. Bounty #82.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "genealogy:check": "node scripts/genealogy-check.js"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "testMatch": ["<rootDir>/src/__tests__/**/*.test.js"]
+  }
+}
