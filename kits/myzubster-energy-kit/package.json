@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-energy-kit",
+  "version": "0.1.0",
+  "description": "ESP32 energy independence kit for the MyZubster modular robot. Battery SoC + low-battery hysteresis + dock navigator + auto-docking state machine + charging notifier + x402 payment protocol spec (documentation only) + tests. Bounty #85.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "energy:check": "node scripts/energy-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/energy/__tests__/**/*.test.js"]
+  }
+}
