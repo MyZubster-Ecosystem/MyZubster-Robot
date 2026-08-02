@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-mother-kit",
+  "version": "0.1.0",
+  "description": "ESP32 mother-robot kit for the MyZubster modular robot. Assembly arm IK + component inventory + assembly sequence state machine + child registration + birth firmware generator + tests. Bounty #78.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "mother:check": "node scripts/mother-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/mother/__tests__/**/*.test.js"]
+  }
+}
