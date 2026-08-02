@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-seed-kit",
+  "version": "0.1.0",
+  "description": "ESP32 automatic seed-planting robot kit for the MyZubster modular robot. GPS positioning + dibber mechanism + seed dispenser + soil cover + growth monitor + tests. Bounty #77.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "seed:check": "node scripts/seed-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/seed/__tests__/**/*.test.js"]
+  }
+}
