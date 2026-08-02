@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![Made with ESP32](https://img.shields.io/badge/Made%20with-ESP32-red.svg)](https://www.espressif.com/en/products/socs/esp32)
-
+[![Status](https://img.shields.io/badge/Status-Live-brightgreen)](https://github.com/MyZubster-Ecosystem/MyZubster-Robot)
 ---
 
 ## 🌟 **What is MyZubster Robot?**
