@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://myzubster.example/kits/dna-kit/dna.schema.json",
+  "title": "MyZubster Robot DNA",
+  "description": "Hereditary DNA data structure for self-replicating MyZubster robots. Models robot type, skills, reputation, jobs completed, an informational wallet address (never generated/signed/broadcast in this kit), hardware config, learning log, and genealogy backref. Issue #79.",
+  "type": "object",
+  "required": ["id", "robotType"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique robot id. Mother robots mint their own; children derive from genealogy."
+    },
+    "robotType": {
+      "type": "string",
+      "enum": ["lawn-mower", "irrigator", "drone", "agri", "eco", "recycled", "diy", "mother", "custom"]
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill", "level"],
+        "additionalProperties": false,
+        "properties": {
+          "skill": { "type": "string" },
+          "level": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      }
+    },
+    "reputation": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "jobsCompleted": { "type": "integer", "minimum": 0 },
+    "walletAddress": {
+      "type": ["string", "null"],
+      "description": "Informational only. The maintainer wires the real upstream wallet; this kit never generates, signs, or broadcasts."
+    },
+    "hardwareConfig": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "MCU, sensors, actuators, power - free-form config inherited/overridden by children."
+    },
+    "learningLog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lesson", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "lesson": { "type": "string" },
+ "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "ts": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "genealogy": {
+      "type": "object",
+      "required": ["parentRef", "generation"],
+      "additionalProperties": false,
+      "properties": {
+ "parentRef": { "type": ["string", "null"] },
+        "generation": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "createdAt": { "type": ["string", "null"] }
+  }
+}
