@@ -1,0 +1,9 @@
+{
+  "name": "myzubster-recycled-kit",
+  "version": "0.1.0",
+  "description": "Open-source circular-economy robotics docs kit (recycled components). Bounty #72.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node scripts/validate.js"
+  }
+}
