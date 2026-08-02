@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-lawnmower-kit",
+  "version": "0.1.0",
+  "description": "ESP32 modular lawnmower (<200 EUR chassis) kit for the MyZubster modular robot. Differential drive steering + motor speed PI + obstacle/tilt safety + cutting deck ramp + x402 payment protocol spec (documentation only) + BOM validator + tests. Bounty #70.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "lawnmower:check": "node scripts/lawnmower-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/lawnmower/__tests__/**/*.test.js"]
+  }
+}
