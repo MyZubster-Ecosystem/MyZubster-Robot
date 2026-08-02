@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-garden-kit",
+  "version": "0.1.0",
+  "description": "ESP32 garden-automation robot kit for the MyZubster modular robot. Grass cutting scheduler + boustrophedon mowing path + irrigation scheduler + weed classifier + garden mapping + tests. Bounty #76.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "garden:check": "node scripts/garden-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/garden/__tests__/**/*.test.js"]
+  }
+}
