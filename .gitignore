@@ -8,3 +8,15 @@ build/
 .idea/
 *.swp
 *.swo
+
+# Nested directories (duplicates/clones)
+MyZubster-Robot/
+gateway/
+monero-wallet/
+arduino-robot-sdk/
+robot-marketplace/
+x402-gateway/
+
+# Temp files
+*.tmp
+docs/CONTRIBUTORS.md.tmp
