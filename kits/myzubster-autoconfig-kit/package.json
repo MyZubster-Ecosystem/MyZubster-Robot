@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-autoconfig-kit",
+  "version": "0.1.0",
+  "description": "ESP32 auto-config kit for the MyZubster modular robot. Child ID generation + wallet descriptor generator + MyZubster registration + base skills copy + referrer assignment + DNA inheritance + tests. Bounty #81.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "autoconfig:check": "node scripts/autoconfig-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/autoconfig/__tests__/**/*.test.js"]
+  }
+}
