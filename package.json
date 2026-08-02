@@ -1,0 +1,14 @@
+{
+  "name": "myzubster-robot",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "gateway",
+    "MyZubster-Robot/gateway"
+  ],
+  "scripts": {
+    "test": "npm test --workspace=gateway",
+    "lint": "npm run lint --workspace=gateway",
+    "build": "npm run build --workspace=gateway"
+  }
+}
