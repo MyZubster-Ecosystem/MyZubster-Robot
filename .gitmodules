@@ -1,0 +1,6 @@
+[submodule "gateway"]
+	path = gateway
+	url = https://github.com/MyZubster-Ecosystem/MyZubsterGateway
+[submodule "monero-wallet"]
+	path = monero-wallet
+	url = https://github.com/monero-project/monero
