@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-assembly-kit",
+  "version": "0.1.0",
+  "description": "ESP32 assembly-line robot kit for the MyZubster modular robot. 6-station scheduler + WIP tracker + throughput estimator + line balancer + quality gate + tests. Bounty #80.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "line:check": "node scripts/line-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/line/__tests__/**/*.test.js"]
+  }
+}
