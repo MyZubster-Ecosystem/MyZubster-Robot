@@ -1,0 +1,13 @@
+{
+  "name": "myzubster-dna-kit",
+  "version": "0.1.0",
+  "description": "Hereditary robot-DNA data structure + inheritance/mutation/genealogy-tree kit for the MyZubster modular robot. Bounty #79.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "dna:check": "node scripts/dna-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
