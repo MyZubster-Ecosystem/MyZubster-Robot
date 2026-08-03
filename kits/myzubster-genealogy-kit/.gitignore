@@ -1,0 +1,9 @@
+node_modules/
+npm-debug.log*
+.DS_Store
+*.log
+build/
+dist/
+.cache/
+coverage/
+generated-dashboard.html
