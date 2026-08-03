@@ -1,0 +1,13 @@
+{
+  "name": "myzubster-diy-kit",
+  "version": "0.1.0",
+  "description": "Open-source DIY kit for building a modular MyZubster-compatible ESP32 robot from scratch. Bounty #75.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "bom:check": "node scripts/bom-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
