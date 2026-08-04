@@ -1,0 +1,13 @@
+{
+  "name": "myzubster-agri-kit",
+  "version": "0.1.0",
+  "description": "ESP32 water-saving irrigation robotics kit for the MyZubster modular robot. Capacitive soil-moisture sensor + solenoid-valve + threshold + energy-monitor + tests. Bounty #74.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "agri:check": "node scripts/agri-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
