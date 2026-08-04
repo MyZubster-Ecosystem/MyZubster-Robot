@@ -1,0 +1,13 @@
+{
+  "name": "myzubster-eco-kit",
+  "version": "0.1.0",
+  "description": "ESP32 energy-saving (eco) mode kit for the MyZubster modular robot. Sleep + motor idle + energy monitoring. Bounty #71.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "eco:check": "node scripts/eco-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
