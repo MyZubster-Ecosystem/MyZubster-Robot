@@ -1,0 +1,16 @@
+{
+  "name": "myzubster-replication-kit",
+  "version": "0.1.0",
+  "description": "ESP32 self-replication kit for the MyZubster modular robot (issue #73 Auto-replicazione). Modular interchangeable part registry + assembly-sequence planner + clonable-firmware manifest (documentation only) + 7-state self-replication controller FSM + progress tracker + copy validator + tests. Bounty #73.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "replication:check": "node scripts/replication-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/replication/__tests__/**/*.test.js"]
+  }
+}
