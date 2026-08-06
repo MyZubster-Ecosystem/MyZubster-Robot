@@ -23,6 +23,8 @@ MyZubster Robot is an open-source ecosystem that enables autonomous robots to:
 | Directory | Description |
 |-----------|-------------|
 | `x402-gateway/` | Node.js gateway with x402 Payment Required endpoints |
+| `contracts/` | Smart contracts for robot job escrow |
+| `docs/` | API and escrow design notes |
 | `arduino-robot-sdk/` | Arduino/ESP32 library for robots |
 | `robot-marketplace/` | Smart contracts and skill marketplace |
 
