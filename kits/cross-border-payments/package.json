@@ -1,0 +1,16 @@
+{
+  "name": "cross-border-payments",
+  "version": "0.1.0",
+  "description": "Cross-border payments with Monero kit for MyZubster-Ecosystem/MyZubster-Robot (#21). Currency conversion + region routing + quote compositor + 5-phase payment flow state machine + mock transaction ledger + xmr payment URI builder. Documentation-only, no wallet signing, no mainnet broadcast, no custody. Safe-harbor docs + deterministic jest tests.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "crossborder:check": "node scripts/crossborder-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": ["<rootDir>/firmware/lib/crossborder/__tests__/**/*.test.js"]
+  }
+}
