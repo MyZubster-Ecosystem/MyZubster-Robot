@@ -1,0 +1,18 @@
+{
+  "name": "china-adoption",
+  "version": "0.1.0",
+  "description": "China adoption kit for MyZubster-Ecosystem/MyZubster-Robot (#34). Regulatory readiness (PBoC/CAC/SAFE/MARA/MIIT incl. 2021 crypto ban + e-CNY context) + event timeline + DJI/XAG/Zoomlion partner tracker + 2-beta-tester pipeline + zh (Simplified-Chinese) i18n + community-manager pipeline + market entry planner. Documentation-only, safe-harbor, deterministic jest tests.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "cn:check": "node scripts/china-check.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/firmware/lib/chinadoption/__tests__/**/*.test.js"
+    ]
+  }
+}
