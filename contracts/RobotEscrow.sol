@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface IERC20 {
-    function transfer(address to, uint256 amount) external returns (bool);
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-}
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title RobotEscrow
 /// @notice 2-of-3 escrow for robot work orders: client, robot, and AI arbiter.
-contract RobotEscrow {
+contract RobotEscrow is ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     enum Status {
         None,
         Funded,
@@ -36,8 +37,6 @@ contract RobotEscrow {
     uint8 private constant ARBITER_BIT = 4;
 
     uint256 public nextEscrowId = 1;
-    bool private locked;
-
     mapping(uint256 => Escrow) public escrows;
 
     event EscrowCreated(
@@ -54,13 +53,6 @@ contract RobotEscrow {
     event DisputeRaised(uint256 indexed escrowId, address indexed reporter, string reason);
     event FundsReleased(uint256 indexed escrowId, address indexed robot, uint256 amount);
     event FundsRefunded(uint256 indexed escrowId, address indexed client, uint256 amount);
-
-    modifier nonReentrant() {
-        require(!locked, "RobotEscrow: reentrant call");
-        locked = true;
-        _;
-        locked = false;
-    }
 
     modifier onlyFundedOrDisputed(uint256 escrowId) {
         Status status = escrows[escrowId].status;
@@ -86,8 +78,13 @@ contract RobotEscrow {
     ) external nonReentrant returns (uint256 escrowId) {
         require(token != address(0), "RobotEscrow: token required");
         require(amount > 0, "RobotEscrow: amount required");
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        require(
+            IERC20(token).balanceOf(address(this)) - balanceBefore == amount,
+            "RobotEscrow: fee-on-transfer token unsupported"
+        );
         escrowId = _createEscrow(msg.sender, robot, arbiter, token, amount, workHash);
-        require(IERC20(token).transferFrom(msg.sender, address(this), amount), "RobotEscrow: token transfer failed");
     }
 
     function approveRelease(uint256 escrowId)
@@ -199,7 +196,7 @@ contract RobotEscrow {
             (bool sent, ) = recipient.call{value: amount}("");
             require(sent, "RobotEscrow: native transfer failed");
         } else {
-            require(IERC20(token).transfer(recipient, amount), "RobotEscrow: token transfer failed");
+            IERC20(token).safeTransfer(recipient, amount);
         }
     }
 

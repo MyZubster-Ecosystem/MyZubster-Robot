@@ -30,7 +30,10 @@ function reviewWorkEvidence({ telemetry = {}, evidence = {}, disputeReason = "" 
   }
 
   const confidence = Math.max(0, Math.min(1, Number(score.toFixed(2))));
-  const decision = confidence >= 0.65 ? "approve_release" : "needs_human_review";
+  const hasDispute = typeof disputeReason === "string" && disputeReason.trim() !== "";
+  const decision = confidence >= 0.85 && !hasDispute
+    ? "approve_release"
+    : "needs_human_review";
 
   return {
     decision,

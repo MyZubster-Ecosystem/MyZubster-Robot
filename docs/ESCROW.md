@@ -1,42 +1,84 @@
-# Robot Escrow Design
+# Robot Escrow Trust Model
 
-Issue #69 asks for a 2-of-3 escrow system for robot jobs. This implementation adds:
+Issue #69 adds a 2-of-3 escrow for EVM-native and ERC-20 robot work orders. The
+three participants are the client, robot, and arbiter. Any two distinct
+participants can release or refund an escrow.
 
-- `contracts/RobotEscrow.sol`: on-chain settlement for native or ERC-20 funds
-- `x402-gateway/src/escrowStore.js`: gateway state for robot jobs
-- `x402-gateway/src/aiArbiter.js`: simulated AI review for completion evidence
-- `x402-gateway/src/server.js`: HTTP endpoints for clients, robots, and arbiters
+## Settlement Authority
 
-## Flow
+`RobotEscrow.sol` is the only settlement authority. The gateway stores job
+metadata, evidence, disputes, and proposed approvals, but it never marks money
+as released or refunded from its own counters. A final status is recorded only
+after `POST /api/escrow/:id/reconcile` reads and validates the contract state.
 
-1. The client creates and funds an escrow.
-2. The robot sees the escrow through `GET /api/robot/:robotId/escrows`.
-3. The robot performs work and submits release approval.
-4. The client or AI arbiter approves completion.
-5. Once two approvals exist, the gateway marks the escrow as `released` and the smart contract can release funds.
+The included `EvmChainReader` reads `getEscrow` from `EVM_RPC_URL` and queries
+the settlement event from `EVM_ESCROW_DEPLOYMENT_BLOCK`. Reconciliation rejects
+a snapshot when the client, robot, arbiter, token,
+amount, or work hash differs from the gateway record. It also rejects backward
+status transitions. A production `chainReader` must read from a configured RPC
+provider and return a transaction hash and block number for auditability.
 
-If a dispute is raised, any two refund approvals settle the escrow as `refunded`.
+## Contract Security
 
-## On-Chain Contract
+- OpenZeppelin `SafeERC20` supports tokens that return `bool` and tokens that
+  return no value.
+- False-return tokens are rejected.
+- Fee-on-transfer tokens are rejected at funding so the recorded amount always
+  equals the contract balance increase.
+- OpenZeppelin `ReentrancyGuard` protects funding and settlement calls.
+- Status is finalized before the external native-token transfer.
+- Duplicate approvals and non-participant callers revert.
 
-`RobotEscrow` supports native token escrows and ERC-20 escrows:
+## AI Arbiter Boundary
 
-- `createNativeEscrow(robot, arbiter, workHash)`
-- `createTokenEscrow(token, robot, arbiter, amount, workHash)`
-- `approveRelease(escrowId)`
-- `approveRefund(escrowId)`
-- `raiseDispute(escrowId, reason)`
-- `getEscrow(escrowId)`
+The included arbiter is deterministic test scaffolding, not an autonomous
+payment authority. It can propose the arbiter release vote only when:
 
-The contract stores participant addresses, amount, token, work hash, approvals, and settlement status. It does not depend on external Solidity packages, so it can be compiled in Hardhat, Foundry, Remix, or deployment pipelines without dependency setup.
+1. confidence is at least `0.85`;
+2. no dispute exists; and
+3. the client or robot has already proposed release.
 
-## Simulated AI Arbiter
+Even then, the gateway remains pending until the two approvals are submitted to
+the contract and reconciliation observes the resulting on-chain settlement.
+Low-confidence and disputed cases always require human review.
 
-The AI arbiter is intentionally deterministic for tests:
+## XMR Is Separate
 
-- Completion flags and work units increase confidence.
-- Photo evidence slightly increases confidence.
-- Failure, fraud, damage, incomplete work, or telemetry errors reduce confidence.
-- Confidence at or above `0.65` adds the arbiter release approval.
+The Solidity contract cannot hold or release Monero. `XMR` requests are rejected
+by this EVM adapter. Monero work orders must use the repository's separate
+Monero multisig coordinator and its own verifiable transaction flow. Examples
+must not label EVM native/ERC-20 escrow balances as XMR.
 
-This keeps the behavior testable while leaving room to replace the simulator with Anthropic MCP or another model-backed arbiter later.
+## Reproducible Validation
+
+```bash
+npm ci
+npm run test:escrow
+```
+
+The suite compiles Solidity locally and tests all approval combinations,
+duplicate and unauthorized approvals, disputes, native/ERC-20 transfers,
+non-standard tokens, reentrancy, AI guardrails, and gateway/chain divergence.
+
+## Local Deployment
+
+```bash
+npm ci
+npm --workspace x402-gateway run node:local
+```
+
+In a second terminal:
+
+```bash
+npm --workspace x402-gateway run deploy:local
+```
+
+Store the printed contract address in the gateway deployment configuration.
+Production deployments should use an audited network-specific script or plugin,
+a funded deployer supplied through the environment, and a verified contract.
+No private key belongs in this repository. Runtime reconciliation requires:
+
+```bash
+EVM_RPC_URL=https://your-rpc.example
+EVM_ESCROW_DEPLOYMENT_BLOCK=123456
+```

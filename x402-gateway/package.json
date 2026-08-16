@@ -6,10 +6,18 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test"
+    "compile": "hardhat compile",
+    "test": "npm run test:gateway && npm run test:contract",
+    "test:gateway": "node --test test/*.test.js",
+    "test:contract": "hardhat test",
+    "node:local": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost"
   },
   "engines": {
     "node": ">=20"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.13.4"
+  }
 }

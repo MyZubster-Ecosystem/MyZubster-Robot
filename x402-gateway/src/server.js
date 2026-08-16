@@ -4,8 +4,9 @@ const http = require("node:http");
 const { URL } = require("node:url");
 const { EscrowStore } = require("./escrowStore");
 const { reviewWorkEvidence } = require("./aiArbiter");
+const { EvmChainReader } = require("./evmChainReader");
 
-function createServer({ store = new EscrowStore() } = {}) {
+function createServer({ store = createDefaultStore() } = {}) {
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, "http://localhost");
@@ -30,21 +31,21 @@ function createServer({ store = new EscrowStore() } = {}) {
         if (req.method === "POST" && path[3] === "confirm-release") {
           const payload = await readJson(req);
           return sendJson(res, 200, {
-            escrow: store.approveRelease(escrowId, payload.role, payload.evidence || {})
+            escrow: store.approveRelease(escrowId, payload.actorId, payload.evidence || {})
           });
         }
 
         if (req.method === "POST" && path[3] === "confirm-refund") {
           const payload = await readJson(req);
           return sendJson(res, 200, {
-            escrow: store.approveRefund(escrowId, payload.role, payload.evidence || {})
+            escrow: store.approveRefund(escrowId, payload.actorId, payload.evidence || {})
           });
         }
 
         if (req.method === "POST" && path[3] === "dispute") {
           const payload = await readJson(req);
           return sendJson(res, 200, {
-            escrow: store.raiseDispute(escrowId, payload.role, payload.reason)
+            escrow: store.raiseDispute(escrowId, payload.actorId, payload.reason)
           });
         }
 
@@ -56,6 +57,10 @@ function createServer({ store = new EscrowStore() } = {}) {
             escrow: store.recordAiReview(escrowId, review)
           });
         }
+
+        if (req.method === "POST" && path[3] === "reconcile") {
+          return sendJson(res, 200, { escrow: await store.reconcile(escrowId) });
+        }
       }
 
       if (req.method === "GET" && path[0] === "api" && path[1] === "robot" && path[2] && path[3] === "escrows") {
@@ -66,6 +71,16 @@ function createServer({ store = new EscrowStore() } = {}) {
     } catch (error) {
       sendJson(res, error.statusCode || 500, { error: error.message || "internal error" });
     }
+  });
+}
+
+function createDefaultStore() {
+  if (!process.env.EVM_RPC_URL) return new EscrowStore();
+  return new EscrowStore({
+    chainReader: new EvmChainReader({
+      rpcUrl: process.env.EVM_RPC_URL,
+      fromBlock: Number(process.env.EVM_ESCROW_DEPLOYMENT_BLOCK || 0)
+    })
   });
 }
 
@@ -102,4 +117,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createServer, readJson };
+module.exports = { createDefaultStore, createServer, readJson };

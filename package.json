@@ -4,11 +4,20 @@
   "private": true,
   "workspaces": [
     "gateway",
-    "MyZubster-Robot/gateway"
+    "MyZubster-Robot/gateway",
+    "x402-gateway"
   ],
   "scripts": {
-    "test": "npm test --workspace=gateway",
+    "test": "npm run test:escrow",
+    "test:escrow": "npm --workspace x402-gateway test",
     "lint": "npm run lint --workspace=gateway",
     "build": "npm run build --workspace=gateway"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@openzeppelin/contracts": "^5.1.0",
+    "chai": "^4.5.0",
+    "ethers": "^6.13.4",
+    "hardhat": "^2.22.17"
   }
 }
