@@ -1,278 +1,216 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/**
- * @title RobotEscrow
- * @author MyZubster Ecosystem
- * @notice Escrow 2-di-3 per lavori robot: Cliente + Robot + AI Arbitro.
- *
- * @dev Modello di fiducia:
- *  1. Il Cliente crea il job e deposita i fondi, che restano bloccati nello smart contract.
- *  2. Il Robot esegue il lavoro.
- *  3. Servono 2 firme su 3 (Cliente, Robot, AI Arbitro) per sbloccare il pagamento al Robot.
- *  4. In caso di disputa, l'AI Arbitro decide la direzione (rilascio al Robot o rimborso al Cliente).
- *  5. Se il lavoro non completa entro la scadenza, il Cliente puo' chiedere il rimborso.
- *
- *  Il contratto e' pensato per essere deployato su Polygon/Base e pilotato da un
- *  API Gateway (vedi docs/escrow-api.md). L'AI Arbitro e' un bot off-chain che
- *  esamina l'evidenza del lavoro e chiama resolveDispute(); qui viene fornita anche
- *  una simulazione deterministica per il testing (simulateArbiterVerdict).
- */
-contract RobotEscrow {
-    // ------------------------------------------------------------------
-    // Tipi
-    // ------------------------------------------------------------------
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+/// @title RobotEscrow
+/// @notice 2-of-3 escrow for robot work orders: client, robot, and AI arbiter.
+contract RobotEscrow is ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     enum Status {
-        AwaitingFunding, // job creato, fondi non ancora depositati
-        Funded,          // fondi bloccati, in attesa che il Robot inizi
-        InProgress,      // Robot al lavoro
-        Completed,       // pagamento rilasciato al Robot
-        Disputed,        // disputa aperta
-        Refunded         // fondi rimborsati al Cliente
+        None,
+        Funded,
+        Disputed,
+        Released,
+        Refunded
     }
 
-    struct Job {
+    struct Escrow {
         address client;
         address robot;
-        address arbiter;     // AI Arbitro (simulato off-chain)
-        uint256 amount;      // fondi bloccati (wei)
+        address arbiter;
+        address token;
+        uint256 amount;
+        bytes32 workHash;
+        uint8 releaseApprovals;
+        uint8 refundApprovals;
         Status status;
-        uint256 deadline;    // scadenza per il completamento (timestamp)
-        bool clientApproved; // firma del Cliente
-        bool robotApproved;  // firma del Robot
-        bool arbiterApproved; // firma dell'AI Arbitro
+        uint64 createdAt;
+        uint64 settledAt;
     }
 
-    // ------------------------------------------------------------------
-    // Storage
-    // ------------------------------------------------------------------
-    uint256 private _nextJobId;
+    uint8 private constant CLIENT_BIT = 1;
+    uint8 private constant ROBOT_BIT = 2;
+    uint8 private constant ARBITER_BIT = 4;
 
-    mapping(bytes32 => Job) private _jobs;
-    bytes32[] private _jobList;
+    uint256 public nextEscrowId = 1;
+    mapping(uint256 => Escrow) public escrows;
 
-    // ------------------------------------------------------------------
-    // Eventi
-    // ------------------------------------------------------------------
-    event JobCreated(bytes32 indexed jobId, address indexed client, address indexed robot, address arbiter, uint256 amount);
-    event Funded(bytes32 indexed jobId, uint256 amount);
-    event WorkStarted(bytes32 indexed jobId);
-    event Approved(bytes32 indexed jobId, address indexed by);
-    event Released(bytes32 indexed jobId, address indexed robot, uint256 amount);
-    event Disputed(bytes32 indexed jobId, address indexed by);
-    event Resolved(bytes32 indexed jobId, bool releaseToRobot, uint256 amount);
-    event Refunded(bytes32 indexed jobId, address indexed client, uint256 amount);
+    event EscrowCreated(
+        uint256 indexed escrowId,
+        address indexed client,
+        address indexed robot,
+        address arbiter,
+        address token,
+        uint256 amount,
+        bytes32 workHash
+    );
+    event ReleaseApproved(uint256 indexed escrowId, address indexed signer, uint8 approvals);
+    event RefundApproved(uint256 indexed escrowId, address indexed signer, uint8 approvals);
+    event DisputeRaised(uint256 indexed escrowId, address indexed reporter, string reason);
+    event FundsReleased(uint256 indexed escrowId, address indexed robot, uint256 amount);
+    event FundsRefunded(uint256 indexed escrowId, address indexed client, uint256 amount);
 
-    // ------------------------------------------------------------------
-    // Errori
-    // ------------------------------------------------------------------
-    error Unauthorized();
-    error ZeroAddress();
-    error InvalidDuration();
-    error InvalidStatus(Status current);
-    error InsufficientFunds();
-    error DeadlineNotPassed();
-    error JobNotFound();
-
-    // ------------------------------------------------------------------
-    // Modifiers
-    // ------------------------------------------------------------------
-    modifier onlyParty(bytes32 jobId) {
-        Job storage j = _jobs[jobId];
-        if (msg.sender != j.client && msg.sender != j.robot && msg.sender != j.arbiter) {
-            revert Unauthorized();
-        }
+    modifier onlyFundedOrDisputed(uint256 escrowId) {
+        Status status = escrows[escrowId].status;
+        require(status == Status.Funded || status == Status.Disputed, "RobotEscrow: escrow is settled");
         _;
     }
 
-    modifier onlyArbiter(bytes32 jobId) {
-        if (msg.sender != _jobs[jobId].arbiter) revert Unauthorized();
-        _;
+    function createNativeEscrow(
+        address robot,
+        address arbiter,
+        bytes32 workHash
+    ) external payable returns (uint256 escrowId) {
+        require(msg.value > 0, "RobotEscrow: amount required");
+        escrowId = _createEscrow(msg.sender, robot, arbiter, address(0), msg.value, workHash);
     }
 
-    // ------------------------------------------------------------------
-    // View
-    // ------------------------------------------------------------------
-    function getJob(bytes32 jobId)
+    function createTokenEscrow(
+        address token,
+        address robot,
+        address arbiter,
+        uint256 amount,
+        bytes32 workHash
+    ) external nonReentrant returns (uint256 escrowId) {
+        require(token != address(0), "RobotEscrow: token required");
+        require(amount > 0, "RobotEscrow: amount required");
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        require(
+            IERC20(token).balanceOf(address(this)) - balanceBefore == amount,
+            "RobotEscrow: fee-on-transfer token unsupported"
+        );
+        escrowId = _createEscrow(msg.sender, robot, arbiter, token, amount, workHash);
+    }
+
+    function approveRelease(uint256 escrowId)
         external
-        view
-        returns (
-            address client,
-            address robot,
-            address arbiter,
-            uint256 amount,
-            Status status,
-            uint256 deadline,
-            bool clientApproved,
-            bool robotApproved,
-            bool arbiterApproved
-        )
+        nonReentrant
+        onlyFundedOrDisputed(escrowId)
     {
-        Job storage j = _jobs[jobId];
-        if (j.client == address(0)) revert JobNotFound();
-        return (j.client, j.robot, j.arbiter, j.amount, j.status, j.deadline, j.clientApproved, j.robotApproved, j.arbiterApproved);
+        Escrow storage escrow = escrows[escrowId];
+        uint8 signerBit = _participantBit(escrow, msg.sender);
+        require((escrow.releaseApprovals & signerBit) == 0, "RobotEscrow: release already approved");
+
+        escrow.releaseApprovals |= signerBit;
+        emit ReleaseApproved(escrowId, msg.sender, escrow.releaseApprovals);
+
+        if (_approvalCount(escrow.releaseApprovals) >= 2) {
+            _release(escrowId, escrow);
+        }
     }
 
-    function jobCount() external view returns (uint256) {
-        return _jobList.length;
+    function approveRefund(uint256 escrowId)
+        external
+        nonReentrant
+        onlyFundedOrDisputed(escrowId)
+    {
+        Escrow storage escrow = escrows[escrowId];
+        uint8 signerBit = _participantBit(escrow, msg.sender);
+        require((escrow.refundApprovals & signerBit) == 0, "RobotEscrow: refund already approved");
+
+        escrow.refundApprovals |= signerBit;
+        escrow.status = Status.Disputed;
+        emit RefundApproved(escrowId, msg.sender, escrow.refundApprovals);
+
+        if (_approvalCount(escrow.refundApprovals) >= 2) {
+            _refund(escrowId, escrow);
+        }
     }
 
-    function jobAt(uint256 index) external view returns (bytes32) {
-        return _jobList[index];
+    function raiseDispute(uint256 escrowId, string calldata reason)
+        external
+        onlyFundedOrDisputed(escrowId)
+    {
+        Escrow storage escrow = escrows[escrowId];
+        _participantBit(escrow, msg.sender);
+        escrow.status = Status.Disputed;
+        emit DisputeRaised(escrowId, msg.sender, reason);
     }
 
-    // ------------------------------------------------------------------
-    // Flusso principale
-    // ------------------------------------------------------------------
-
-    /// @dev Il Cliente crea un nuovo job di escrow. Il chiamante diventa il Cliente.
-    /// @param robot Indirizzo del Robot esecutore.
-    /// @param arbiter Indirizzo dell'AI Arbitro.
-    /// @param durationSeconds Durata massima del lavoro (per il rimborso su timeout).
-    function createJob(address robot, address arbiter, uint256 durationSeconds) external returns (bytes32 jobId) {
-        if (robot == address(0) || arbiter == address(0)) revert ZeroAddress();
-        if (durationSeconds == 0) revert InvalidDuration();
-
-        jobId = keccak256(abi.encodePacked(msg.sender, robot, arbiter, _nextJobId++));
-
-        Job storage j = _jobs[jobId];
-        j.client = msg.sender;
-        j.robot = robot;
-        j.arbiter = arbiter;
-        j.status = Status.AwaitingFunding;
-        j.deadline = block.timestamp + durationSeconds;
-
-        _jobList.push(jobId);
-        emit JobCreated(jobId, msg.sender, robot, arbiter, 0);
+    function getEscrow(uint256 escrowId) external view returns (Escrow memory) {
+        return escrows[escrowId];
     }
 
-    /// @dev Il Cliente deposita i fondi (payable).
-    function fund(bytes32 jobId) external payable {
-        Job storage j = _jobs[jobId];
-        if (j.client == address(0)) revert JobNotFound();
-        if (msg.sender != j.client) revert Unauthorized();
-        if (j.status != Status.AwaitingFunding) revert InvalidStatus(j.status);
-        if (msg.value == 0) revert InsufficientFunds();
-
-        j.amount += msg.value;
-        j.status = Status.Funded;
-        emit Funded(jobId, msg.value);
+    function hasReleaseApproval(uint256 escrowId, address signer) external view returns (bool) {
+        Escrow storage escrow = escrows[escrowId];
+        return (escrow.releaseApprovals & _participantBit(escrow, signer)) != 0;
     }
 
-    /// @dev Il Robot dichiara l'inizio del lavoro.
-    function startWork(bytes32 jobId) external {
-        Job storage j = _jobs[jobId];
-        if (j.client == address(0)) revert JobNotFound();
-        if (msg.sender != j.robot) revert Unauthorized();
-        if (j.status != Status.Funded) revert InvalidStatus(j.status);
-
-        j.status = Status.InProgress;
-        emit WorkStarted(jobId);
+    function hasRefundApproval(uint256 escrowId, address signer) external view returns (bool) {
+        Escrow storage escrow = escrows[escrowId];
+        return (escrow.refundApprovals & _participantBit(escrow, signer)) != 0;
     }
 
-    /// @dev Una delle 3 parti firma il completamento. Con 2 firme su 3 i fondi
-    ///      vengono rilasciati al Robot automaticamente.
-    function approve(bytes32 jobId) external onlyParty(jobId) {
-        Job storage j = _jobs[jobId];
-        if (j.status != Status.Funded && j.status != Status.InProgress) revert InvalidStatus(j.status);
+    function _createEscrow(
+        address client,
+        address robot,
+        address arbiter,
+        address token,
+        uint256 amount,
+        bytes32 workHash
+    ) internal returns (uint256 escrowId) {
+        require(robot != address(0), "RobotEscrow: robot required");
+        require(arbiter != address(0), "RobotEscrow: arbiter required");
+        require(robot != client, "RobotEscrow: robot cannot be client");
+        require(arbiter != client && arbiter != robot, "RobotEscrow: arbiter must be distinct");
 
-        if (msg.sender == j.client) {
-            j.clientApproved = true;
-        } else if (msg.sender == j.robot) {
-            j.robotApproved = true;
+        escrowId = nextEscrowId++;
+        escrows[escrowId] = Escrow({
+            client: client,
+            robot: robot,
+            arbiter: arbiter,
+            token: token,
+            amount: amount,
+            workHash: workHash,
+            releaseApprovals: 0,
+            refundApprovals: 0,
+            status: Status.Funded,
+            createdAt: uint64(block.timestamp),
+            settledAt: 0
+        });
+
+        emit EscrowCreated(escrowId, client, robot, arbiter, token, amount, workHash);
+    }
+
+    function _release(uint256 escrowId, Escrow storage escrow) private {
+        escrow.status = Status.Released;
+        escrow.settledAt = uint64(block.timestamp);
+        _transferFunds(escrow.token, escrow.robot, escrow.amount);
+        emit FundsReleased(escrowId, escrow.robot, escrow.amount);
+    }
+
+    function _refund(uint256 escrowId, Escrow storage escrow) private {
+        escrow.status = Status.Refunded;
+        escrow.settledAt = uint64(block.timestamp);
+        _transferFunds(escrow.token, escrow.client, escrow.amount);
+        emit FundsRefunded(escrowId, escrow.client, escrow.amount);
+    }
+
+    function _transferFunds(address token, address recipient, uint256 amount) private {
+        if (token == address(0)) {
+            (bool sent, ) = recipient.call{value: amount}("");
+            require(sent, "RobotEscrow: native transfer failed");
         } else {
-            j.arbiterApproved = true;
-        }
-
-        emit Approved(jobId, msg.sender);
-
-        uint256 sigs = _signatureCount(j);
-        if (sigs >= 2) {
-            _releaseToRobot(jobId);
+            IERC20(token).safeTransfer(recipient, amount);
         }
     }
 
-    /// @dev Apre una disputa. Solo una delle 3 parti.
-    function dispute(bytes32 jobId) external onlyParty(jobId) {
-        Job storage j = _jobs[jobId];
-        if (j.status != Status.Funded && j.status != Status.InProgress) revert InvalidStatus(j.status);
-
-        j.status = Status.Disputed;
-        emit Disputed(jobId, msg.sender);
+    function _participantBit(Escrow storage escrow, address signer) private view returns (uint8) {
+        require(escrow.status != Status.None, "RobotEscrow: unknown escrow");
+        if (signer == escrow.client) return CLIENT_BIT;
+        if (signer == escrow.robot) return ROBOT_BIT;
+        if (signer == escrow.arbiter) return ARBITER_BIT;
+        revert("RobotEscrow: signer is not a participant");
     }
 
-    /// @dev L'AI Arbitro risolve la disputa (ruolo di spareggio).
-    /// @param releaseToRobot true = paga il Robot; false = rimborsa il Cliente.
-    function resolveDispute(bytes32 jobId, bool releaseToRobot) external onlyArbiter(jobId) {
-        Job storage j = _jobs[jobId];
-        if (j.status != Status.Disputed) revert InvalidStatus(j.status);
-
-        j.arbiterApproved = true;
-        uint256 amount = j.amount;
-
-        if (releaseToRobot) {
-            _releaseToRobot(jobId);
-        } else {
-            _refundToClient(jobId);
-        }
-        emit Resolved(jobId, releaseToRobot, amount);
-    }
-
-    /// @dev Il Cliente chiede il rimborso se il lavoro non e' stato completato entro la scadenza.
-    function refund(bytes32 jobId) external {
-        Job storage j = _jobs[jobId];
-        if (j.client == address(0)) revert JobNotFound();
-        if (msg.sender != j.client) revert Unauthorized();
-        if (j.status != Status.Funded && j.status != Status.InProgress) revert InvalidStatus(j.status);
-        if (block.timestamp < j.deadline) revert DeadlineNotPassed();
-
-        _refundToClient(jobId);
-    }
-
-    // ------------------------------------------------------------------
-    // AI Arbitro simulato
-    // ------------------------------------------------------------------
-
-    /// @dev Simulazione deterministica del verdetto dell'AI Arbitro (solo testing/demo).
-    ///      In produzione l'arbitro e' un bot off-chain che valuta l'evidenza e chiama
-    ///      resolveDispute() con la decisione reale.
-    function simulateArbiterVerdict(bytes32 jobId, uint256 nonce) external pure returns (bool) {
-        return (uint256(keccak256(abi.encodePacked(jobId, nonce))) % 2) == 0;
-    }
-
-    // ------------------------------------------------------------------
-    // Interni
-    // ------------------------------------------------------------------
-
-    function _signatureCount(Job storage j) internal view returns (uint256) {
-        uint256 n = 0;
-        if (j.clientApproved) n++;
-        if (j.robotApproved) n++;
-        if (j.arbiterApproved) n++;
-        return n;
-    }
-
-    function _releaseToRobot(bytes32 jobId) internal {
-        Job storage j = _jobs[jobId];
-        j.status = Status.Completed;
-        uint256 amount = j.amount;
-        j.amount = 0;
-
-        (bool ok, ) = j.robot.call{value: amount}("");
-        require(ok, "RobotEscrow: transfer to robot failed");
-
-        emit Released(jobId, j.robot, amount);
-    }
-
-    function _refundToClient(bytes32 jobId) internal {
-        Job storage j = _jobs[jobId];
-        j.status = Status.Refunded;
-        uint256 amount = j.amount;
-        j.amount = 0;
-
-        (bool ok, ) = j.client.call{value: amount}("");
-        require(ok, "RobotEscrow: refund to client failed");
-
-        emit Refunded(jobId, j.client, amount);
+    function _approvalCount(uint8 approvals) private pure returns (uint8 count) {
+        if ((approvals & CLIENT_BIT) != 0) count++;
+        if ((approvals & ROBOT_BIT) != 0) count++;
+        if ((approvals & ARBITER_BIT) != 0) count++;
     }
 }
