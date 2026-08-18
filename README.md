@@ -1,86 +1,71 @@
-# 🤖 MyZubster Robot
+# MyZubster Robot
 
-**Open-source robot payment system with x402, Monero, and Arduino**
+Open-source robotics experimentation track inside the MyZubster ecosystem.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-[![Made with ESP32](https://img.shields.io/badge/Made%20with-ESP32-red.svg)](https://www.espressif.com/en/products/socs/esp32)
-[![Status](https://img.shields.io/badge/Status-Live-brightgreen)](https://github.com/MyZubster-Ecosystem/MyZubster-Robot)
----
+## Status
 
-## 🌟 **What is MyZubster Robot?**
+**Prototype / simulation / hardware-integration research.** Repository code may include x402-style request flows, ESP32/Arduino experiments, robot identity/DNA concepts and payment-adjacent prototypes. A feature described in code or an issue must not be presented as autonomous production settlement unless the relevant hardware, network and verifier evidence exists.
 
-MyZubster Robot is an open-source ecosystem that enables autonomous robots to:
-- **Request payments** using the x402 protocol
-- **Pay with Monero** for recharge and services
-- **Be cloned** with a referral system (5% fee for 1 year)
-- **Integrate AI** for decision-making (MCP/Anthropic)
+## Scope
 
----
+Typical work in this repository includes:
 
-## 📦 **Repository Structure**
+- ESP32/Arduino robot clients and examples;
+- robot registration/identity experiments;
+- telemetry and command interfaces;
+- x402-style payment-request experiments;
+- robot marketplace/skill concepts;
+- simulation and safe hardware integration;
+- reproducible robotics documentation.
 
-| Directory | Description |
-|-----------|-------------|
-| `x402-gateway/` | Node.js gateway with x402 Payment Required endpoints |
-| `arduino-robot-sdk/` | Arduino/ESP32 library for robots |
-| `robot-marketplace/` | Smart contracts and skill marketplace |
+Self-replication, autonomous purchasing and autonomous settlement should be treated as research/prototype concepts unless a specific implementation and physical validation are documented.
 
----
+## Development
 
-## 🚀 **Quick Start**
+Inspect the current repository tree before following older issue instructions; historical issues may reference directories or flows that have changed.
 
-### 1. Clone the Repository
+Typical component workflows may include Node.js and Arduino/ESP32 tooling. Run the tests supplied by the component you modify and document any required hardware.
 
-```bash
-git clone https://github.com/MyZubster-Ecosystem/MyZubster-Robot.git
-cd MyZubster-Robot
-2. Start the x402 Gateway
-bash
+## Safety
 
-cd x402-gateway
-npm install
-npm start
+Robotics contributions must fail safe. Do not submit bounty work that requires:
 
-3. Upload to ESP32
-bash
+- uncontrolled physical actuation;
+- bypassing emergency-stop/safety boundaries;
+- dangerous tools or hazardous-device construction;
+- testing on people/property without authorization;
+- secret/private-key storage on devices or in source control.
 
-cd arduino-robot-sdk/examples/x402_robot
-# Open in Arduino IDE and upload
+Simulation is preferred before physical deployment.
 
-📡 x402 Gateway API
-Method	Endpoint	Description
-POST	/api/robot/register	Register a new robot
-GET	/api/robot/charge	Request recharge (returns 402)
-GET	/api/robot/:id	Get robot info
-🛠️ Arduino SDK
-Installation
+## Payments and bounties
 
-    Copy arduino-robot-sdk/src/ to your Arduino libraries folder
+Payment-request prototypes and bounty labels are separate from verified external settlement.
 
-    Open examples in Arduino IDE
+- MYZ in the current core platform is an internal reward/accounting ledger.
+- XMR/token settlement is not `PAID` until independently verified on the applicable rail.
+- A robot/service response must never self-declare an external payment final.
+- Historical bounty amounts are not proof of payment.
 
-Example Usage
-cpp
+Read:
 
-#include <MyZubsterWallet.h>
-#include <MyZubsterX402.h>
+- [Canonical Bounty System](https://github.com/MyZubster-Ecosystem/myzubster/blob/main/BOUNTIES.md)
+- [Ecosystem Architecture](https://github.com/MyZubster-Ecosystem/myzubster/blob/main/docs/ECOSYSTEM.md)
 
-void setup() {
-  MyZubsterWallet wallet("4A2B...");
-  wallet.requestRecharge(0.01);
-}
+See `BOUNTIES.md` for repository-specific scope.
 
-🔗 Links
+## Related repositories
 
-    Repository: https://github.com/MyZubster-Ecosystem/MyZubster-Robot
+- [myzubster](https://github.com/MyZubster-Ecosystem/myzubster) — core ecosystem
+- [MyZubsterGateway](https://github.com/MyZubster-Ecosystem/MyZubsterGateway) — integration/settlement boundary
+- [EVA-IONI](https://github.com/MyZubster-Ecosystem/EVA-IONI) — robotics/software track
+- [myzubster-space-station](https://github.com/MyZubster-Ecosystem/myzubster-space-station) — telemetry/vertical-slice track
+- [myzubster-docs](https://github.com/MyZubster-Ecosystem/myzubster-docs) — documentation hub
 
-    Ecosystem: https://github.com/MyZubster-Ecosystem
+## Contributing
 
-    DEV.to: https://dev.to/danielioni
+Use an existing issue or open a narrowly scoped proposal. Include reproducible tests/simulation evidence and clearly state whether physical hardware was actually tested.
 
-📄 License
+## License
 
-MIT License – see LICENSE file.
-
-Built with ❤️ by Daniel Ioni & the MyZubster Community
+See the repository `LICENSE` file for authoritative terms.
