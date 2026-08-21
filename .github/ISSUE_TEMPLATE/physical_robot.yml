@@ -1,0 +1,86 @@
+name: Physical robot / hardware prototype
+description: Propose a new MyZubster physical robot using the canonical specification → BOM → build → telemetry workflow.
+title: "[Physical Robot] "
+labels:
+  - hardware
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for a distinct physical robot or hardware prototype. Canonical standard: #146. BOM index: #145.
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Initial status
+      options:
+        - CONCEPT
+        - PROCUREMENT-READY
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Physical purpose and environment
+      description: What will the robot physically do, and where?
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Minimum functional requirements
+      description: List testable physical capabilities.
+    validations:
+      required: true
+
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Proposed controller, sensors, actuators and power
+      description: Include known voltage/current and mechanical requirements.
+    validations:
+      required: true
+
+  - type: textarea
+    id: telemetry
+    attributes:
+      label: MyZubster telemetry
+      description: Which public-safe device state should be exported? Never include secrets/private keys.
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety boundaries
+      description: Power disconnect, low-voltage design, constrained first tests, battery protection, actuator hazards.
+    validations:
+      required: true
+
+  - type: textarea
+    id: bom
+    attributes:
+      label: BOM
+      description: Link an existing compatible BOM or state that a dedicated BOM must be created before procurement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      description: What evidence is required before this robot may be called tested/integrated/verified?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: evidence
+    attributes:
+      label: Evidence rules
+      options:
+        - label: I will not describe a concept, simulation, ordered component or BOM as a completed physical robot.
+          required: true
+        - label: Public telemetry will exclude credentials, wallet seeds, private keys and unnecessary personal/location data.
+          required: true
